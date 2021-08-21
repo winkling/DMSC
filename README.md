@@ -1,6 +1,6 @@
 # DMSC
 
-- [ ] Color scheme
+- [x] Color scheme
 - [ ] UI draft
 - [ ] UI framework. 
 - [ ] Components: header, search, queue, pager
