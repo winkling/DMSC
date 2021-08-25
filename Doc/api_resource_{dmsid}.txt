@@ -1,0 +1,16 @@
+curl -X GET "https://dms.fulgentinternal.com/api/resource/DMS202108256138666" -H  "accept: */*" -H  "X-API-Key: fakeapiid"
+
+Response Headers
+ accept-ranges: bytes 
+ cache-control: no-cache,no-store,max-age=0,must-revalidate 
+ content-disposition: attachment; filename="Filtered_Variants_FT-TS7825162_ACT21H2205806_multisource.db" 
+ content-length: 166912 
+ content-type: application/octet-stream 
+ date: Wed,25 Aug 2021 16:55:55 GMT 
+ expires: 0 
+ pragma: no-cache 
+ server: nginx 
+ strict-transport-security: max-age=31536000 ; includeSubDomains,max-age=31536000 
+ x-content-type-options: nosniff,nosniff 
+ x-frame-options: DENY 
+ x-xss-protection: 1; mode=block,1; mode=block 

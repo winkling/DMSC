@@ -2,8 +2,8 @@
 
 - [x] Color scheme
 - [x] UI draft
-- [ ] UI framework. 
-- [ ] Components: header, search, queue, pager
+- [x] UI framework. 
+- [x] Components: header, search, queue, pager
 - [ ] Queue
 - [ ] Fill with local dummy data
 - [ ] View doc
