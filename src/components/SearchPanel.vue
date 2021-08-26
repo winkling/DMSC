@@ -1,7 +1,7 @@
 <template>
-  <v-card height="150px">
+  <v-card class="pt-3 pb-2 mb-1 grey lighten-5">
     <v-form ref="form" v-model="valid" lazy-validation>
-      <v-container class="grey lighten-5 mb-6">
+      <v-container>
         <v-row align="center">
           <v-col cols="12" md="4">
             <v-text-field

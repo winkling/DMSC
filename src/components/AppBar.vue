@@ -1,17 +1,17 @@
 <template>
-  <v-app-bar app color="primary" dark>
-    <div class="d-flex align-center">
+  <v-app-bar app color="orange lighten-2">
+    <v-col>
       <v-img
         alt="Logo"
-        class="shrink mr-2"
+        class="shrink pl-0"
         contain
         :src="require('../assets/fulgent_logo.svg')"
         transition="scale-transition"
         width="100"
       />
-    </div>
-
-    <v-spacer></v-spacer>
+    </v-col>
+    <v-col align-self="center" class="text-center text-h6 grey--text text--lighten-5">DMSC</v-col>
+    <v-col align-self="end" class="text-right text-subtitle-1 grey--text text--lighten-5">v0.1.0</v-col>
   </v-app-bar>
 </template>
 

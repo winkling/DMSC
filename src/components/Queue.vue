@@ -9,7 +9,7 @@
       class="elevation-1"
     >
       <template v-slot:item.resourcePath="{ item }">
-        <v-btn :href="item.resourcePath" target="_blank" text>
+        <v-btn :href="getResourceURL(item.resourcePath)" target="_blank" text>
           <v-icon>mdi-open-in-new</v-icon>
         </v-btn>
       </template>
@@ -79,6 +79,9 @@ export default {
         dateStyle: "short",
         timeStyle: "medium",
       }).format(Date.parse(dateString));
+    },
+    getResourceURL(resourcePath){
+      return "https://dms.fulgentinternal.com" + resourcePath;
     },
     /**
      * In a real application this would be a call to fetch() or axios.get()
