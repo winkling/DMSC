@@ -1,11 +1,13 @@
 <template>
   <v-app>
+    <AppBar />
+
     <v-main>
-      <AppBar />
       <SearchPanel />
       <Queue />
-      <Footer />
     </v-main>
+    
+    <Footer />
   </v-app>
 </template>
 
