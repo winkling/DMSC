@@ -7,7 +7,7 @@
         contain
         :src="require('../assets/fulgent_logo.svg')"
         transition="scale-transition"
-        width="90"
+        width="100"
       />
     </div>
 
