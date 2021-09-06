@@ -49,9 +49,11 @@ export default {
   methods: {
     validate() {
       this.$refs.form.validate();
+      this.$emit("do-search", this.externalId, this.containerName);
     },
     reset() {
       this.$refs.form.reset();
+      this.$emit("do-search", this.externalId, this.containerName);
     },
   },
 };

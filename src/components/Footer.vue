@@ -1,10 +1,12 @@
 <template>
-  <v-footer padless>
-    <v-col class="text-left" cols="6">
+  <v-footer padless color="#ffffb0" :class="{ error: errorMessage !== '' }">
+    <v-col class="text-left" cols="3">
       <strong>Server:</strong> {{ serverURL }}
     </v-col>
-
-    <v-col class="text-right" cols="6">
+    <v-col class="text-center" cols="6">
+      <strong v-if="errorMessage !== ''">Error:</strong> {{ errorMessage }}
+    </v-col>
+    <v-col class="text-right" cols="3">
       <strong>Total records:</strong> {{ totalRecords }}
     </v-col>
   </v-footer>
@@ -13,12 +15,10 @@
 <script>
 export default {
   name: "Footer",
-
-  data() {
-    return {
-      serverURL: "https://dms.fulgentinternal.com",
-      totalRecords: 33654835,
-    };
+  props: {
+    serverURL: String,
+    totalRecords: Number,
+    errorMessage: String,
   },
 };
 </script>
