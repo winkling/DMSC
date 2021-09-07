@@ -10,6 +10,7 @@
         :loading="searchResult.loading"
         :extPageNumber="searchParam.extPageNumber"
         @do-page="onDoPage"
+        @download-resource="onDownloadResource"
       />
     </v-main>
 
@@ -22,17 +23,15 @@
 </template>
 
 <script>
+const FileSaver = require("file-saver");
+const axios = require("axios");
+
 import AppBar from "./components/AppBar";
 import SearchPanel from "./components/SearchPanel";
 import Queue from "./components/Queue";
 import Footer from "./components/Footer";
 
-import {
-  SERVER_URL,
-  X_API_KEY,
-  TIMEOUT_SEC,
-  SEARCH_ENDPOINT,
-} from "./config.js";
+import { SERVER_URL, X_API_KEY, TIMEOUT_SEC, SEARCH_ENDPOINT } from "./config.js";
 
 export default {
   name: "App",
@@ -70,12 +69,10 @@ export default {
   }),
 
   methods: {
-    onDoSearch: function(externalId, containerName) {
+    onDoSearch(externalId, containerName) {
       this.searchParam.externalId = externalId;
       this.searchParam.containerName = containerName;
-      console.log(
-        `onDoSearch: externalId=${externalId}, containerName=${containerName}`
-      );
+      console.log(`onDoSearch: externalId=${externalId}, containerName=${containerName}`);
 
       if (this.searchParam.extPageNumber === 1) {
         this.getDataFromApi(); //if currently in the first page, trigger the search here.
@@ -84,7 +81,7 @@ export default {
       }
     },
 
-    onDoPage: function(options) {
+    onDoPage(options) {
       this.searchParam.extPageNumber = options.page;
       this.searchParam.sortBy = options.sortBy;
       this.searchParam.sortDesc = options.sortDesc;
@@ -101,92 +98,98 @@ export default {
     getDataFromApi() {
       this.searchResult.loading = true;
 
-      let url = this.buildUrl();
+      let url = this.buildSearchUrl();
 
-      this.remoteApiCall(url)
-        .then((data) => {
-          this.searchResult.records = data.content;
-          this.searchResult.totalRecords = data.totalElements;
+      axios
+        .get(url, {
+          headers: {
+            "X-API-KEY": this.appConfig.x_api_key,
+          },
+          timeout: this.appConfig.timeout_sec * 1000,
+        })
+        .then((response) => {
+          this.searchResult.records = response.data.content;
+          this.searchResult.totalRecords = response.data.totalElements;
           this.searchResult.errorMessage = "";
           this.searchResult.loading = false;
         })
         .catch((err) => {
-          this.searchResult.loading = false;
           console.error(`${err}`);
           this.searchResult.errorMessage = err.message;
+          this.searchResult.loading = false;
         });
+
+      //fake code:
+      // this.fakeApiCall().then((response) => {
+      //   this.searchResult.records = response.content;
+      //   this.searchResult.totalRecords = response.totalElements;
+      //   this.searchResult.errorMessage = "";
+      //   this.searchResult.loading = false;
+      // });
     },
 
-    buildUrl() {
+    buildSearchUrl() {
       //example:
-      //https://localhost:8443/api/record?page=1&size=10&sort=modified&sort=string&externalId=ext&containerName=con&fileName=fn&markedForDeletion=true
-      let url = `${this.appConfig.serverURL}${
-        this.appConfig.searchEndpoint
-      }?page=${this.searchParam.page - 1}&size=${
+      //https://localhost:8443/api/record?page=1&size=10&sort=modified%2CDESC&externalId=ext&containerName=con&fileName=fn&markedForDeletion=true
+      let url = `${this.appConfig.serverURL}${this.appConfig.searchEndpoint}?page=${this.searchParam.page - 1}&size=${
         this.searchParam.itemsPerPage
       }`;
-      if (
-        this.searchParam.sortBy.length === 1 &&
-        this.searchParam.sortDesc.length === 1
-      ) {
-        let sortBy =
-          this.searchParam.sortBy[0] === "dmsId"
-            ? "id"
-            : this.searchParam.sortBy[0];
-        url += `&sort=${sortBy}${
-          this.searchParam.sortDesc[0] ? "%2CDESC" : ""
-        }`;
+      if (this.searchParam.sortBy.length === 1 && this.searchParam.sortDesc.length === 1) {
+        let sortBy = this.searchParam.sortBy[0] === "dmsId" ? "id" : this.searchParam.sortBy[0];
+        url += `&sort=${sortBy}${this.searchParam.sortDesc[0] ? "%2CDESC" : ""}`;
       }
       if (this.searchParam.externalId) {
-        url += `&externalId=${this.searchParam.externalId}`;
+        url += `&externalId=${encodeURIComponent(this.searchParam.externalId)}`;
       }
       if (this.searchParam.containerName) {
-        url += `&containerName=${this.searchParam.containerName}`;
+        url += `&containerName=${encodeURIComponent(this.searchParam.containerName)}`;
       }
 
       console.log(`buildUrl: ${url}`);
       return url;
     },
 
-    async remoteApiCall(url) {
-      const fetchPro = fetch(url, {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          "X-API-KEY": this.appConfig.x_api_key,
-        },
-      });
+    onDownloadResource(resourcePath) {
+      console.log(`onDownloadResource: ${resourcePath}`);
 
-      const res = await Promise.race([
-        fetchPro,
-        this.timeout(this.appConfig.timeout_sec),
-      ]);
-      const data = await res.json();
+      let url = this.appConfig.serverURL + resourcePath;
 
-      if (!res.ok) {
-        throw new Error(`${data.message} (${res.status})`);
-      }
-      return data;
+      axios
+        .get(url, {
+          headers: {
+            "X-API-KEY": this.appConfig.x_api_key,
+          },
+          responseType: "blob",
+          timeout: this.appConfig.timeout_sec * 1000,
+        })
+        .then((response) => {
+          let filename = this.getFileNameFromHeader(response.headers);
+          console.log(`filename: ${filename}`);
+          FileSaver.saveAs(new Blob([response.data]), filename);
+        })
+        .catch((err) => {
+          console.error(`${err}`);
+          this.searchResult.errorMessage = err.message;
+        });
     },
 
-    timeout(s) {
-      return new Promise(function(_, reject) {
-        setTimeout(function() {
-          reject(new Error(`Timeout after ${s} seconds.`));
-        }, s * 1000);
-      });
+    getFileNameFromHeader(headers) {
+      let filename = "";
+      let disposition = headers["content-disposition"];
+      if (disposition && disposition.indexOf("attachment") !== -1) {
+        let filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        let matches = filenameRegex.exec(disposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, "");
+        }
+      }
+
+      return filename;
     },
 
     fakeApiCall() {
       return new Promise((resolve /*, reject*/) => {
-        const {
-          sortBy,
-          sortDesc,
-          page,
-          itemsPerPage,
-          externalId,
-          containerName,
-        } = this.searchParam;
+        const { sortBy, sortDesc, page, itemsPerPage, externalId, containerName } = this.searchParam;
 
         console.log(
           `getData: sortBy(${sortBy[0]}), desc(${sortDesc[0]}), page(${page}), itemsPerPage(${itemsPerPage}), extID(${externalId}), containerName(${containerName})`
@@ -214,10 +217,7 @@ export default {
         }
 
         if (itemsPerPage > 0) {
-          content = content.slice(
-            (page - 1) * itemsPerPage,
-            page * itemsPerPage
-          );
+          content = content.slice((page - 1) * itemsPerPage, page * itemsPerPage);
         }
 
         setTimeout(() => {
@@ -257,8 +257,7 @@ export default {
           },
           {
             externalId: "FH-TS3119580",
-            fileName:
-              "Filtered_Variants_FH-TS3119580_ACT21H2104740_multisource.db",
+            fileName: "Filtered_Variants_FH-TS3119580_ACT21H2104740_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "7c4b95fe2ac0acb8b584a9a9722e1a24",
@@ -280,8 +279,7 @@ export default {
           },
           {
             externalId: "FT-TS7822879",
-            fileName:
-              "Filtered_Variants_FT-TS7822879_ACT21H2192936_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7822879_ACT21H2192936_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "2bf44262da75502214f57b2f43bbe9ba",
@@ -292,8 +290,7 @@ export default {
           },
           {
             externalId: "FT-TS7822866",
-            fileName:
-              "Filtered_Variants_FT-TS7822866_ACT21H2193733_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7822866_ACT21H2193733_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "3194796d1576d54de898f2a8eaf5ce2f",
@@ -304,8 +301,7 @@ export default {
           },
           {
             externalId: "FT-TS7821426",
-            fileName:
-              "Filtered_Variants_FT-TS7821426_ACT21H2190148_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7821426_ACT21H2190148_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "1bff3abf725be09f6835eb36b1f86339",
@@ -316,8 +312,7 @@ export default {
           },
           {
             externalId: "FT-TS7821644",
-            fileName:
-              "Filtered_Variants_FT-TS7821644_ACT21H2190110_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7821644_ACT21H2190110_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "6ad159d04da0b2d13e3bc9278f96388f",
@@ -328,8 +323,7 @@ export default {
           },
           {
             externalId: "FT-TS7821409",
-            fileName:
-              "Filtered_Variants_FT-TS7821409_ACT21H2188740_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7821409_ACT21H2188740_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "20a16eba03e51586611420129d983ad9",
@@ -340,8 +334,7 @@ export default {
           },
           {
             externalId: "FT-TS7821415",
-            fileName:
-              "Filtered_Variants_FT-TS7821415_ACT21H2188738_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7821415_ACT21H2188738_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "e4146df9bd4eb22d55e97aee54390b45",
@@ -352,8 +345,7 @@ export default {
           },
           {
             externalId: "FH-TS3122151",
-            fileName:
-              "Filtered_Variants_FH-TS3122151_ACT21H2183067_multisource.db",
+            fileName: "Filtered_Variants_FH-TS3122151_ACT21H2183067_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "048ac01dcf0fbe72f3c2a468baa23adf",
@@ -364,8 +356,7 @@ export default {
           },
           {
             externalId: "FH-TS3119614",
-            fileName:
-              "Filtered_Variants_FH-TS3119614_ACT21H2104635_multisource.db",
+            fileName: "Filtered_Variants_FH-TS3119614_ACT21H2104635_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "40f83cfeb30b0dcb8a596fd70daeaaba",
@@ -398,8 +389,7 @@ export default {
           },
           {
             externalId: "FT-TS7826983",
-            fileName:
-              "Filtered_Variants_FT-TS7826983_ACT21H2221524_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7826983_ACT21H2221524_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "51696fc30efca5689508c6fff8319ada",
@@ -410,8 +400,7 @@ export default {
           },
           {
             externalId: "FT-TS7826269",
-            fileName:
-              "Filtered_Variants_FT-TS7826269_ACT21H2218164_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7826269_ACT21H2218164_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "d6136223fb1ffbf70ae522899a929424",
@@ -422,8 +411,7 @@ export default {
           },
           {
             externalId: "FT-TS7825285",
-            fileName:
-              "Filtered_Variants_FT-TS7825285_ACT21H2210728_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7825285_ACT21H2210728_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "59761f227e5ee0ef0e6dbab206c69b6e",
@@ -434,8 +422,7 @@ export default {
           },
           {
             externalId: "FT-TS7825164",
-            fileName:
-              "Filtered_Variants_FT-TS7825164_ACT21H2205729_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7825164_ACT21H2205729_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "679bfe90b9ae962fab5bfd53931ba70c",
@@ -446,8 +433,7 @@ export default {
           },
           {
             externalId: "FT-TS7825163",
-            fileName:
-              "Filtered_Variants_FT-TS7825163_ACT21H2207358_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7825163_ACT21H2207358_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "232d414af267b7966f75a3f460d2f9c0",
@@ -458,8 +444,7 @@ export default {
           },
           {
             externalId: "FT-TS7825162",
-            fileName:
-              "Filtered_Variants_FT-TS7825162_ACT21H2205806_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7825162_ACT21H2205806_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "a137dadf19e5256d83999a3dc2ce5480",
@@ -470,8 +455,7 @@ export default {
           },
           {
             externalId: "FT-TS7825161",
-            fileName:
-              "Filtered_Variants_FT-TS7825161_ACT21H2207373_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7825161_ACT21H2207373_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "53fbca5deaa92c4d80a4899afc23a076",
@@ -482,8 +466,7 @@ export default {
           },
           {
             externalId: "FT-TS7825154",
-            fileName:
-              "Filtered_Variants_FT-TS7825154_ACT21H2205719_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7825154_ACT21H2205719_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "98823f4b7f38cb177f95601895ffe9bc",
@@ -494,8 +477,7 @@ export default {
           },
           {
             externalId: "FT-TS7825153",
-            fileName:
-              "Filtered_Variants_FT-TS7825153_ACT21H2205778_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7825153_ACT21H2205778_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "542dde68be2d02d3783f0d0b6d6a6950",
@@ -506,8 +488,7 @@ export default {
           },
           {
             externalId: "FT-TS7825152",
-            fileName:
-              "Filtered_Variants_FT-TS7825152_ACT21H2205735_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7825152_ACT21H2205735_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "517e3f700e408f5a70f94ff32bb6f2f5",
@@ -518,8 +499,7 @@ export default {
           },
           {
             externalId: "FT-TS7825151",
-            fileName:
-              "Filtered_Variants_FT-TS7825151_ACT21H2207359_multisource.db",
+            fileName: "Filtered_Variants_FT-TS7825151_ACT21H2207359_multisource.db",
             fileType: "db",
             containerName: "NGSAnalysis",
             md5sum: "8bfc101108459805f7951a58399c4677",

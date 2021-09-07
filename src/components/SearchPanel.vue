@@ -4,26 +4,15 @@
       <v-container>
         <v-row align="center">
           <v-col cols="12" md="4">
-            <v-text-field
-              v-model="externalId"
-              label="External ID"
-            ></v-text-field>
+            <v-text-field v-model="externalId" label="External ID" :rules="externalIdRules"></v-text-field>
           </v-col>
 
           <v-col cols="12" md="4">
-            <v-text-field
-              v-model="containerName"
-              label="Container Name"
-            ></v-text-field>
+            <v-text-field v-model="containerName" label="Container Name" :rules="containerNameRules"></v-text-field>
           </v-col>
 
           <v-col cols="12" md="4">
-            <v-btn
-              :disabled="!valid"
-              color="success"
-              class="mr-4"
-              @click="validate"
-            >
+            <v-btn :disabled="!valid" color="success" class="mr-4" @click="validate">
               Search
             </v-btn>
             <v-btn color="error" class="mr-4" @click="reset">
@@ -43,7 +32,12 @@ export default {
   data: () => ({
     valid: true,
     externalId: "",
+    externalIdRules: [
+      (v) => (v ? v.length <= 255 || "External ID must be less than 255 characters" : true),
+      (v) => (v ? /^\S+$/.test(v) : true) || "External ID must be valid (regex: ^\\S+$)",
+    ],
     containerName: "",
+    containerNameRules: [(v) => (v ? v.length <= 255 || "Container Name must be less than 255 characters" : true)],
   }),
 
   methods: {

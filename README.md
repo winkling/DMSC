@@ -6,10 +6,11 @@
 - [x] Components: header, search, queue, pager
 - [x] Queue
 - [x] Fill with local dummy data
-- [ ] View doc
+- [x] View doc
 - [ ] Delete record
 - [ ] Multi selection
 - [x] Connect to backend
 - [x] Error handling
 - [ ] UI tweak
-- [x] Configuration 
+- [x] Configuration
+- [x] Validation in search panel 

@@ -8,11 +8,12 @@
       :loading="loading"
       :footer-props="{
         showFirstLastPage: true,
+        showCurrentPage: true,
       }"
       class="elevation-1"
     >
       <template v-slot:item.resourcePath="{ item }">
-        <v-btn :href="getResourceURL(item.resourcePath)" target="_blank" text>
+        <v-btn @click="$emit('download-resource', item.resourcePath)" target="_blank" text>
           <v-icon>mdi-open-in-new</v-icon>
         </v-btn>
       </template>
@@ -29,8 +30,6 @@
 </template>
 
 <script>
-import { SERVER_URL /*X_API_KEY*/ } from "../config.js";
-
 export default {
   name: "Queue",
 
@@ -84,10 +83,6 @@ export default {
         dateStyle: "short",
         timeStyle: "medium",
       }).format(Date.parse(dateString));
-    },
-
-    getResourceURL(resourcePath) {
-      return SERVER_URL + resourcePath; //TODO: what about X-API-KEY?
     },
   },
 };

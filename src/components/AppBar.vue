@@ -10,12 +10,8 @@
         width="100"
       />
     </v-col>
-    <v-col align-self="center" class="text-center text-h6 black--text"
-      >DMSC</v-col
-    >
-    <v-col align-self="end" class="text-right text-subtitle-1 black--text"
-      >v{{ version }}</v-col
-    >
+    <v-col align-self="center" class="text-center text-h6 black--text">DMSC</v-col>
+    <v-col align-self="end" class="text-right text-subtitle-1 black--text">v{{ version }}</v-col>
   </v-app-bar>
 </template>
 
