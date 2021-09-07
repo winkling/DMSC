@@ -9,7 +9,9 @@
       :footer-props="{
         showFirstLastPage: true,
         showCurrentPage: true,
+        itemsPerPageOptions: [10, 15, 20, 25, -1],
       }"
+      :items-per-page="10"
       class="elevation-1"
     >
       <template v-slot:item.resourcePath="{ item }">
