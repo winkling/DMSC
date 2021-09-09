@@ -118,14 +118,6 @@ export default {
           this.searchResult.errorMessage = err.message;
           this.searchResult.loading = false;
         });
-
-      //fake code:
-      // this.fakeApiCall().then((response) => {
-      //   this.searchResult.records = response.content;
-      //   this.searchResult.totalRecords = response.totalElements;
-      //   this.searchResult.errorMessage = "";
-      //   this.searchResult.loading = false;
-      // });
     },
 
     buildSearchUrl() {

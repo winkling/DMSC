@@ -1,5 +1,24 @@
 # DMSC
 
+## Requirement
+Node.js 16.7.0+
+
+## Install dependencies
+`npm install`
+
+## Configuration
+./src/config.js:<br>
+DMS address: `SERVER_URL: "https://dms.fulgentinternal.com"`<br>
+API key: `X_API_KEY: "plm4ever"`
+
+## Run locally
+`npm run serve`
+
+## Build dist file (result in ./dist folder)
+`npm run build`
+
+
+## Todo list
 - [x] Color scheme
 - [x] UI draft
 - [x] UI framework. 
